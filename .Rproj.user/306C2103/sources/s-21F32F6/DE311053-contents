@@ -7,6 +7,8 @@ nombres <- c("año", "mes", "día", "hora_salida", "hora_programada_salida", "at
 colnames(a) <- nombres
 a$tiempo_hora %>% class
 
+a %<>% slice(1:5)
+
 rio::export(a, "flights.es.csv")
 
 readr::write_csv(a, "flights.es.csv")
