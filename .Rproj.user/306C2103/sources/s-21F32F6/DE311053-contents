@@ -1,0 +1,24 @@
+
+nycflights13
+library(nycflights13)
+library(data360r)
+a <- flights
+nombres <- c("año", "mes", "día", "hora_salida", "hora_programada_salida", "atraso_salida", "hora_arribo", "hora_programada_llegada", "atraso_llegada", "carrier", "vuelo", "número_avión", "origen", "destino", "tiempo_vuelo", "distancia", "hora", "minuto", "tiempo_hora")
+colnames(a) <- nombres
+a$tiempo_hora %>% class
+
+rio::export(a, "flights.es.csv")
+
+readr::write_csv(a, "flights.es.csv")
+rm(b)
+b <- readr::read_csv("flights.es.csv")
+lapply(b, class)
+
+b$tiempo_hora %>% as.POSIXct()
+b %<>% as.tibble()
+lapply(b, class)
+
+flights$tiempo_hora %>% class
+
+b %>% View
+

@@ -1,0 +1,158 @@
+---
+title: "Metodología"
+output: 
+  html_document: 
+    highlight: kate
+    theme: cosmo
+    self_contained: false
+    fig_caption: true
+    toc: TRUE
+    toc_depth: 5
+    toc_float: TRUE
+bibliography: packages.bib
+---
+```{r, include=FALSE, echo=FALSE}
+Sys.setlocale(locale = "es_ES.UTF-8")
+
+pqkgs <- c("rio", "magrittr", "stringr", "dplyr", "plyr",  "repmis", "knitr", "rgdal", 
+           "highcharter", "geojsonio", "spdplyr", "rmapshaper", "kableExtra", "knitr", "tidyverse")
+
+lapply(pqkgs, function(x) require(x, character.only = TRUE))
+
+# Citación automática
+repmis::LoadandCite(pqkgs, file = 'packages.bib')
+rm(pqkgs)
+library(rmapshaper)
+
+```
+
+
+## Sobre los datos de elecciones
+
+Los datos electorales fueron extraídos del [Atlas Electoral](http://atlaselectoral.oep.org.bo). 
+
+El MAS-IPSP participó en elecciones con sigla propia desde el año 2002, desde entonces a la fecha se eligieron los siguientes procesos electorales:
+
+```{r, include = F, echo = F}
+a <- tribble(
+  ~Fecha, ~Proceso, ~`Razón de inclusión`, ~Cálculo, ~Exclusiones,
+  "30.06.2002", "Elecciones generales. Voto a Presidente", "Voto directo a Morales. Primera elección nacional del MAS-IPSP con sigla propia",  "Votos al MAS-IPSP sobre total de votos válidos a nivel municipal", "Voto a diputados uninominales. No están vinculados al voto presidencial por tanto son más deficientes en ser proxy del voto de apoyo al líder del partido y a este",
+  "18.12.2005", "Elecciones generales. Voto a Presidente", "Voto directo a Morales", "Votos al MAS-IPSP sobre total de votos válidos a nivel municipal", "Voto a diputados uninominales. No están vinculados al voto presidencial por tanto son más deficientes en ser proxy del voto de apoyo al lider del partido y a este. Tampoco se incluyó la elección de Prefectos del mismo día, ya que en aquella elección el MAS no replicó el voto nacional a nivel de prefectos",
+  "02.06.2006", "Elección de Asambleístas Constituyentes Plurinomimales", "Principal propuesta política del MAS-IPSP ", "Votos al MAS-IPSP sobre total de votos válidos a nivel municipal", "Voto a asambleístas constituyentes uninominales. EL Atlas electoral despliega esta información agregada en alrededor de 70 circunscricpiones, lo que hace imposible la comparación con otros procesos cuya información está a escala menor (municipal)", 
+  "10.08.2008", "Referendo Revocatorio a Presidente y Vicepresidente", "Fue en su momento el mejor proxy de apoyo político 'puro' a Evo Morales, ya que el proyecto de ley fue presentado por la oposición", "Votos a la opción SI
+ (permanencia)  sobre total de votos válidos a nivel municipal", "Revocatoria de mandato a prefectos de Departamento, hecho ocurrido el mismno día", 
+"25.01.2009", "Referendo de aprobación de la nueva Constitución", "Principal propuesta política del MAS-IPSP", "Votos a la opción SI (aprobación de la Constitución)  sobre total de votos válidos a nivel municipal", "Referendo dirimitorio sobre un artículo de la nueva Constitución. El artículo en disputa era tan específico que su aprobación o rechazo no podría ser traducido automáticamente al apoyo a Evo Morales y/o MAS-IPSP",
+"06.12.2009", "Elecciones generales. Voto a Presidente", "Habiéndose aprobado la Constitución, votar por Morales confirmaba la voluntad de la gente de tenerlo como líder del proyecto constitucional", "Votos al MAS-IPSP sobre total de votos válidos a nivel municipal", "Voto a diputados uninominales, voto a diputados indígenas, voto en el exterior", 
+"16.10.2011", "Elecciones judiciales. Consejo de la Magistratura, Tribunal Constitucional, Tribunal Supremo y Tribunal Agrombiental", "Tres semanas antes de la primera elección judicial ocurrió la represión a indígenas en Chaparina. La eleccion judicial se volió plebiscitaria y el voto nulo y blanco triunfaron.", "Promedio de los 5 votos posibles. Se promedió el voto nulo como indicador de rechazo al gobierno de Evo Morales", "Se excluyó del cálculo el voto blanco porque es menos fiable su vinculación al rechazo al gobierno",
+"12.10.2014", "Elecciones generales. Voto a Presidente", "El Tribunal Constitucional habilitó la repostulación de Morales bajo una interpretación constitucional. El voto a Morales significaba apoyar su reelección", "Votos al MAS-IPSP sobre total de votos válidos a nivel municipal", "Voto a diputados uninominales, voto a diputados indígenas, voto en el exterior",
+"21.02.2016", "Referendo de aprobación de modificación constitucional para habilitar a Evo Morales a una nueva candidatura", "Votar por el SI significaba estar de acuerdo a una nueva candidatura de Evo Morales el año 2019", "Votos a la opción SI (aprobación de la reforma constitucional que habilitaba una nueva candidatura de Evo Morales para el año 2019) sobre total de votos válidos a nivel municipal", "Voto en el exterior",
+"03.12.2017", "Elecciones judiciales. Consejo de la Magistratura, Tribunal Constitucional, Tribunal Supremo y Tribunal Agrombiental", "Días antes de la elección el Tribunal Constitucional habilitó a Evo Morales a una nueva candidatura para el 2019, pese al resultado del referendo del 21 de Febrero. La elección, al igual que la del 2011 se politizó en rchazo a la reelección de Evo Morales", "Promedio de los 5 votos posibles. Se promedió el voto nulo como indicador de rechazo al gobierno de Evo Morales", "Se excluyó del cálculo el voto blanco porque es menos fiable su vinculación al rechazo al gobierno")
+```
+
+```{r, include = T, echo = F}
+a %>% 
+  kable("html") %>%
+  kable_styling()
+```
+
+## Sobre el número de municipios
+
+- El mapa que se utilizó contiene 344 polígonos. De los cuales 339 son municipios, el resto son lagos y salares
+
+- Este níumero de polígonos afectó al análisis de años previos donde el número de municipios era menor. Es decir, no se habían fracturado municipios para crearse otros nuevos.
+
+- Por tanto, en los hechos electorales donde los municipios eran menores a 339 se asignó un cero como resultado al municipio que no fue creado a esa fecha pero que figuraba como polígono
+
+- Para el caso de la elección judicial de 2017, los reportes del Tribunal Electoral incluyen a  Raqaypampa, entidad territorial de reciente creación. Con esta entidad el total de polígonos en cuya jurisdicción se ejerce un gobierno asceendió a 340. En este caso se agregaron los votos del municipio creado (Raqaypampa) con los votos del municipio que se fractura para dar vida al primero (Mizque)
+
+## Sobre el modelo
+
+El mapa transitivo de polígonos se inspira en este trabajo de Joshua Kunst:
+
+```{r pressure, echo=FALSE, include=F}
+URL <- "http://graphics8.nytimes.com/newsgraphics/2016/01/15/drug-deaths/c23ba79c9c9599a103a8d60e2329be1a9b7d6994/data.json"
+
+data <-  jsonlite::fromJSON(URL) %>% 
+  tbl_df() %>% 
+  gather(year, value, -fips) %>% 
+  mutate(year = sub("^y", "", year),
+         value = ifelse(is.na(value), 0, value))
+
+ds <- data %>% 
+  group_by(fips) %>% 
+  do(item = list(
+    fips = first(.$fips),
+    sequence = .$value,
+    value = first(.$value))) %>% 
+  .$item
+
+hc <- highchart(type = "map") %>% 
+  hc_add_series(data = ds,
+                name = "drug deaths per 100,000",
+                mapData = uscountygeojson,
+                joinBy = "fips",
+                borderWidth = 0.01) %>% 
+  hc_colorAxis(stops = color_stops()) %>%  
+  hc_title(text = "How the Epidemic of Drug Overdose Deaths Ripples") %>% 
+  hc_legend(layout = "vertical", reversed = TRUE,
+            floating = TRUE, align = "right") %>% 
+  hc_add_theme(hc_theme_smpl()) %>% 
+  hc_motion(
+    enabled = TRUE,
+    axisLabel = "year",
+    labels = sort(unique(data$year)),
+    series = 0,
+    updateIterval = 50,
+    magnet = list(
+      round = "floor",
+      step = 0.1
+    )
+  )
+```
+
+```{r echo=FALSE, include=T}
+hc
+```
+
+<br>
+<br>
+<br>
+El post completo puede encontrarse [aquí](http://jkunst.com/r/adding-motion-to-choropleths/). 
+
+## Sobre el mapa
+
+El primer paso consistía en tener un mapa de los municipios de Bolvia en formato `.geojson`. [GEOBOLIVIA](http://geo.gob.bo/portal/), portal de datos geográficos del Estado Bolviano ofreció el mapa pero con un peso mayor al shape. 
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr"> <a href="https://twitter.com/geoboliviaide/status/954122804504530950"> </a></blockquote> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<img src="tweet.png" style="background:none; border:none; box-shadow:none;" height="100" width="700px">
+
+Sin embargo el mapa en formato [`.shape`](https://geo.gob.bo/download/?w=fondos&l=municipal) se transformó a `.geojson`.
+
+La transformación siguió la ruta propuesta por este post: [Creating geojson out of shapefile in r](https://blog.exploratory.io/creating-geojson-out-of-shapefile-in-r-40bc0005857d). 
+
+**Resultado: Shape = 13,1 megas | Geojson = 863 Kb | 13 veces mas ligero que el formato `shape`**
+
+## Sobre el código y herramientas
+
+Todo el código de programció e infomación necesaria para reproducir esta publicación están disponibles en este repositorio de [GitHub](https://github.com/rafalopezv/MAS.mapa.transitivo/tree/master). 
+
+Todo se realizó en  R[-@CiteR] y las librerías Rio[-@R-rio], Magrittr[-@R-magrittr], Stringr[-@R-stringr], Dplyr[-@R-dplyr], Plyr[-@R-plyr], Repmis[-@R-repmis], Knitr[-@R-knitr], Rgdal[-@R-rgdal], Highcharter[-@R-highcharter], Geojsonio[-@R-highcharter], Spdplyr[-@R-spdplyr],
+Rmapshaper[-@R-rmapshaper], KableExtra[-@R-kableExtra] y Tidyverse[-@R-kableExtra]
+
+## Contáctame
+
+Rafa López V.
+
+- <a href="mailto:lopezvalverde.rafael@gmail.com"><i class="fa fa-envelope fa-lg"></i>   Email</a> 
+
+- <a href="https://www.linkedin.com/in/rafael-lopez-valverde-a141a325/"><i class="fa fa-linkedin fa-lg"></i>   Linkedin</a>
+
+- <a href="https://github.com/rafalopezv"><i class="fa fa-github fa-lg"></i>   GitHub</a>
+
+- <a href="https://twitter.com/rafa_lopezv"><i class="fa fa-twitter fa-lg"></i>   Twitter</a>
+
+- <a href="https://www.facebook.com/profile.php?id=585845584"><i class="fa fa-facebook fa-lg"></i>   Facebook</a>
+
+## Referencias
+

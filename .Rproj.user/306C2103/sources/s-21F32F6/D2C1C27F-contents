@@ -1,0 +1,10 @@
+
+
+a <- rnorm(100, 90, 2)
+b <- rnorm(100, 50, 10)
+
+hist(a, breakes = 20)
+
+library(kableExtra)
+install.packages("rtweet")
+  library(rtweet)
